@@ -6,7 +6,6 @@
     <title>Controle de Gastos Familiar</title>
     <!-- SDK do Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- Google Fonts para um visual moderno -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -86,7 +85,6 @@
         }
         .logout-btn:hover { background-color: var(--danger-hover); }
 
-        /* Card de Resumo do Total */
         .summary-card {
             background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
             color: white;
@@ -97,7 +95,6 @@
         }
         .summary-card span { font-size: 24px; font-weight: 700; display: block; margin-top: 5px; }
 
-        /* Estilização da Tabela */
         .table-container {
             overflow-x: auto;
             border-radius: 8px;
@@ -132,7 +129,7 @@
         <p id="login-error" style="color: var(--danger);"></p>
     </div>
 
-    <!-- Tela do Painel de Gastos (Oculta até o login) -->
+    <!-- Tela do Painel de Gastos -->
     <div id="app-section" class="hidden">
         <div class="header-flex">
             <div>
@@ -161,7 +158,7 @@
                     </tr>
                 </thead>
                 <tbody id="expenses-table-body">
-                    <!-- Os dados entram aqui via JavaScript -->
+                    <!-- Dados entram via JS -->
                 </tbody>
             </table>
         </div>
@@ -169,17 +166,18 @@
 </div>
 
 <script>
-    // ⚠️ ATENÇÃO: Cole aqui as suas credenciais reais do Supabase!
+    // ⚠️ Cole aqui as suas credenciais reais do Supabase
     const SUPABASE_URL = 'https://vrjqsjewututwtbqzxpx.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_jUb90WHv_J6PRWv6S2H83g_-jTE_dhq';
     
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    // Usando supabaseClient para evitar conflito com a biblioteca global
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     async function handleLogin() {
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
 
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
 
         if (error) {
             document.getElementById('login-error').innerText = 'Erro ao entrar: ' + error.message;
@@ -189,12 +187,12 @@
     }
 
     async function handleLogout() {
-        await supabase.auth.signOut();
+        await supabaseClient.auth.signOut();
         checkUser();
     }
 
     async function checkUser() {
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session } } = await supabaseClient.auth.getSession();
         
         if (session) {
             document.getElementById('login-section').classList.add('hidden');
@@ -208,7 +206,7 @@
     }
 
     async function loadExpenses() {
-        const { data, error } = await supabase
+        const { data, error } = await supabaseClient
             .from('expenses')
             .select('*')
             .order('created_at', { ascending: false });
@@ -226,7 +224,7 @@
         if (data && data.length > 0) {
             data.forEach(item => {
                 const valorNumerico = Number(item.amount) || 0;
-                totalGeral += valorNumerico; // Soma para o total
+                totalGeral += valorNumerico;
 
                 const row = document.createElement('tr');
                 const dateStr = item.created_at ? new Date(item.created_at).toLocaleDateString('pt-BR') : '-';
@@ -244,11 +242,9 @@
             tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #64748b;">Nenhum gasto registrado ainda.</td></tr>`;
         }
 
-        // Exibe o total formatado no card superior
         document.getElementById('total-amount').innerText = `R$ ${totalGeral.toFixed(2)}`;
     }
 
-    // Verificar sessão ao carregar a página
     checkUser();
 </script>
 
