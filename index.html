@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle de Gastos Familiar</title>
+    <!-- SDK do Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; }
+        .container { max-width: 600px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        input, button { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { background-color: #28a745; color: white; border: none; font-weight: bold; cursor: pointer; }
+        button:hover { background-color: #218838; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .hidden { display: none; }
+        .logout-btn { background-color: #dc3545; }
+        .logout-btn:hover { background-color: #c82333; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Controle de Gastos Compartilhado</h2>
+
+    <!-- Tela de Login -->
+    <div id="login-section">
+        <h3>Login</h3>
+        <input type="email" id="email" placeholder="E-mail">
+        <input type="password" id="password" placeholder="Senha">
+        <button onclick="handleLogin()">Entrar</button>
+        <p id="login-error" style="color: red;"></p>
+    </div>
+
+    <!-- Tela do Painel de Gastos (Oculta até o login) -->
+    <div id="app-section" class="hidden">
+        <p>Bem-vindo, <span id="user-display"></span></p>
+        <button class="logout-btn" onclick="handleLogout()">Sair</button>
+
+        <h3>Lista de Gastos Registrados</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Data</th>
+                    <th>Descrição</th>
+                    <th>Valor (R$)</th>
+                    <th>Categoria</th>
+                    <th>Usuário</th>
+                </tr>
+            зня
+            <tbody id="expenses-table-body">
+                <!-- Os dados entram aqui via JavaScript -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    // Substitua pelas suas credenciais do projeto Supabase
+    const SUPABASE_URL = 'https://vrjqsjewututwtbqzxpx.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_jUb90WHv_J6PRWv6S2H83g_-jTE_dhq';
+    
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    async function handleLogin() {
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+        if (error) {
+            document.getElementById('login-error').innerText = 'Erro ao entrar: ' + error.message;
+        } else {
+            checkUser();
+        }
+    }
+
+    async function handleLogout() {
+        await supabase.auth.signOut();
+        checkUser();
+    }
+
+    async function checkUser() {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session) {
+            document.getElementById('login-section').classList.add('hidden');
+            document.getElementById('app-section').classList.remove('hidden');
+            document.getElementById('user-display').innerText = session.user.email;
+            loadExpenses();
+        } else {
+            document.getElementById('login-section').classList.remove('hidden');
+            document.getElementById('app-section').classList.add('hidden');
+        }
+    }
+
+    async function loadExpenses() {
+        const { data, error } = await supabase
+            .from('expenses')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        const tbody = document.getElementById('expenses-table-body');
+        tbody.innerHTML = '';
+
+        if (error) {
+            console.error('Erro ao buscar gastos:', error);
+            return;
+        }
+
+        data.forEach(item => {
+            const row = document.createElement('tr');
+            const dateStr = new Date(item.created_at).toLocaleDateString('pt-BR');
+            row.innerHTML = `
+                <td>${dateStr}</td>
+                <td>${item.description}</td>
+                <td>R$ ${Number(item.amount).toFixed(2)}</td>
+                <td>${item.category || '-'}</td>
+                <td>${item.user_email}</td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+
+    // Verificar sessão ao carregar a página
+    checkUser();
+</script>
+
+</body>
+</html>
