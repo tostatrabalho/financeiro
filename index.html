@@ -95,6 +95,15 @@
         }
         .summary-card span { font-size: 24px; font-weight: 700; display: block; margin-top: 5px; }
 
+        /* Estilo do bloco de adicionar gasto */
+        .add-expense-box {
+            background: #f1f5f9;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            border: 1px solid var(--border-color);
+        }
+
         .table-container {
             overflow-x: auto;
             border-radius: 8px;
@@ -145,6 +154,15 @@
             <span id="total-amount">R$ 0,00</span>
         </div>
 
+        <!-- Formulário para Adicionar Gasto pelo Site -->
+        <div class="add-expense-box">
+            <h3>Adicionar Novo Gasto</h3>
+            <input type="text" id="desc-input" placeholder="Descrição (ex: Supermercado)">
+            <input type="number" step="0.01" id="valor-input" placeholder="Valor (ex: 45.90)">
+            <input type="text" id="cat-input" placeholder="Categoria (ex: Alimentação)">
+            <button onclick="addExpense()">Salvar Gasto</button>
+        </div>
+
         <h3>Histórico de Despesas</h3>
         <div class="table-container">
             <table>
@@ -166,11 +184,10 @@
 </div>
 
 <script>
-    // ⚠️ Cole aqui as suas credenciais reais do Supabase
+    // Suas credenciais do Supabase mantidas
     const SUPABASE_URL = 'https://vrjqsjewututwtbqzxpx.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_jUb90WHv_J6PRWv6S2H83g_-jTE_dhq';
     
-    // Usando supabaseClient para evitar conflito com a biblioteca global
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     async function handleLogin() {
@@ -202,6 +219,42 @@
         } else {
             document.getElementById('login-section').classList.remove('hidden');
             document.getElementById('app-section').classList.add('hidden');
+        }
+    }
+
+    // Função para inserir um novo gasto diretamente pelo site
+    async function addExpense() {
+        const description = document.getElementById('desc-input').value.trim();
+        const amount = document.getElementById('valor-input').value.trim();
+        const category = document.getElementById('cat-input').value.trim();
+
+        if (!description || !amount) {
+            alert('Por favor, preencha pelo menos a descrição e o valor.');
+            return;
+        }
+
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        const userEmail = user ? user.email : 'Site';
+
+        const { error } = await supabaseClient
+            .from('expenses')
+            .insert([{ 
+                description: description, 
+                amount: parseFloat(amount), 
+                category: category || 'Geral', 
+                user_email: userEmail 
+            }]);
+
+        if (error) {
+            alert('Erro ao salvar o gasto: ' + error.message);
+        } else {
+            // Limpa os campos do formulário
+            document.getElementById('desc-input').value = '';
+            document.getElementById('valor-input').value = '';
+            document.getElementById('cat-input').value = '';
+            
+            // Recarrega a tabela e o total imediatamente
+            loadExpenses();
         }
     }
 
