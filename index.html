@@ -62,13 +62,13 @@
     const SUPABASE_URL = 'https://vrjqsjewututwtbqzxpx.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_jUb90WHv_J6PRWv6S2H83g_-jTE_dhq';
     
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     async function handleLogin() {
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
 
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
 
         if (error) {
             document.getElementById('login-error').innerText = 'Erro ao entrar: ' + error.message;
@@ -79,12 +79,12 @@
     }
 
     async function handleLogout() {
-        await supabase.auth.signOut();
+        await supabaseClient.auth.signOut();
         checkUser();
     }
 
     async function checkUser() {
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session } } = await supabaseClient.auth.getSession();
         
         if (session) {
             document.getElementById('login-section').classList.add('hidden');
@@ -98,7 +98,7 @@
     }
 
     async function loadExpenses() {
-        const { data, error } = await supabase
+        const { data, error } = await supabaseClient
             .from('expenses')
             .select('*')
             .order('created_at', { ascending: false });
